@@ -23,11 +23,14 @@ use std::path::PathBuf;
 use std::time::Duration;
 use unicase::UniCase;
 
-use iron::headers::ContentType;
+use iron::headers::{ContentType,
+                    AccessControlAllowOrigin,
+                    AccessControlAllowHeaders,
+                    AccessControlAllowMethods};
 use iron::modifiers::Header;
 use iron::prelude::*;
 use iron::status;
-use iron::middleware::{AroundMiddleware, Handler};
+use iron::middleware::{AroundMiddleware, AfterMiddleware, Handler};
 use iron::method::Method;
 
 use mount::Mount;
@@ -99,22 +102,18 @@ impl AroundMiddleware for CorsMiddleware {
     }
 }
 
-impl iron::middleware::AfterMiddleware for CorsMiddleware {
+impl AfterMiddleware for CorsMiddleware {
     fn after(&self, _: &mut Request, mut resp: Response) -> IronResult<Response> {
-        resp.headers.set(iron::headers::AccessControlAllowOrigin::Value("*".to_string()));
+        resp.headers.set(AccessControlAllowOrigin::Value("*".to_string()));
         let headers = vec![
                     UniCase("Origin".to_owned()),
                     UniCase("X-Requested-With".to_owned()),
                     UniCase("Content-Type".to_owned()),
                     UniCase("Accept".to_owned()),
                     ];
-        resp.headers.set(iron::headers::AccessControlAllowHeaders(headers));
-        let methods = vec![
-                    iron::method::Method::Get,
-                    iron::method::Method::Put,
-                    iron::method::Method::Post,
-                    ];
-        resp.headers.set(iron::headers::AccessControlAllowMethods(methods));
+        resp.headers.set(AccessControlAllowHeaders(headers));
+        let methods = vec![ Method::Get, Method::Put, Method::Post ];
+        resp.headers.set(AccessControlAllowMethods(methods));
         Ok(resp)
     }
 }
