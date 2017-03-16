@@ -14,17 +14,21 @@ extern crate serde_derive;
 extern crate mktemp;
 #[macro_use]
 extern crate quick_error;
+extern crate unicase;
 
 use std::any::Any;
 use std::convert::{TryFrom, TryInto};
 use std::env;
 use std::path::PathBuf;
 use std::time::Duration;
+use unicase::UniCase;
 
 use iron::headers::ContentType;
 use iron::modifiers::Header;
 use iron::prelude::*;
 use iron::status;
+use iron::middleware::{AroundMiddleware, Handler};
+use iron::method::Method;
 
 use mount::Mount;
 use serde::{Serialize, Deserialize};
@@ -72,8 +76,47 @@ fn main() {
     let logger = StatisticLogger::new(file_logger);
     chain.link_around(logger);
 
+    if env::var("CORS").is_ok() {
+        debug!("using CORS");
+        chain.link_around(CorsMiddleware);
+        chain.link_after(CorsMiddleware);
+    }
+
     info!("Starting the server on {}:{}", address, port);
     Iron::new(chain).http((&*address, port)).expect("Unable to start server");
+}
+
+struct CorsMiddleware;
+
+impl AroundMiddleware for CorsMiddleware {
+    fn around(self, handler: Box<Handler>) -> Box<Handler> {
+        Box::new(move | req: &mut Request | {
+            match req.method {
+                Method::Options => Ok(Response::with((status::Ok))),
+                _ => handler.handle(req)
+            }
+        })
+    }
+}
+
+impl iron::middleware::AfterMiddleware for CorsMiddleware {
+    fn after(&self, _: &mut Request, mut resp: Response) -> IronResult<Response> {
+        resp.headers.set(iron::headers::AccessControlAllowOrigin::Value("*".to_string()));
+        let headers = vec![
+                    UniCase("Origin".to_owned()),
+                    UniCase("X-Requested-With".to_owned()),
+                    UniCase("Content-Type".to_owned()),
+                    UniCase("Accept".to_owned()),
+                    ];
+        resp.headers.set(iron::headers::AccessControlAllowHeaders(headers));
+        let methods = vec![
+                    iron::method::Method::Get,
+                    iron::method::Method::Put,
+                    iron::method::Method::Post,
+                    ];
+        resp.headers.set(iron::headers::AccessControlAllowMethods(methods));
+        Ok(resp)
+    }
 }
 
 fn compile(req: &mut Request) -> IronResult<Response> {
