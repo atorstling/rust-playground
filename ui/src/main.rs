@@ -14,6 +14,7 @@ extern crate serde_derive;
 extern crate mktemp;
 #[macro_use]
 extern crate quick_error;
+extern crate iron_cors2;
 
 use std::any::Any;
 use std::convert::{TryFrom, TryInto};
@@ -25,6 +26,8 @@ use iron::headers::ContentType;
 use iron::modifiers::Header;
 use iron::prelude::*;
 use iron::status;
+use iron::method::Method::{Get,Post};
+use iron_cors2::{CorsMiddleware, AllowedOrigins, UniCase};
 
 use mount::Mount;
 use serde::{Serialize, Deserialize};
@@ -71,9 +74,19 @@ fn main() {
     let file_logger = FileLogger::new(logfile).expect("Unable to create file logger");
     let logger = StatisticLogger::new(file_logger);
     let rewrite = Rewrite::new(vec![vec!["help".into()]], "/index.html".into());
+    let cors = CorsMiddleware { 
+        allowed_origins : AllowedOrigins::Any { allow_null: false }, 
+        allowed_headers: vec![UniCase("Content-Type".to_owned())],
+        allowed_methods : vec![ Get, Post ],
+        exposed_headers: vec![],
+        allow_credentials: false,
+        max_age_seconds: 60 * 60,
+        prefer_wildcard: true
+    };
 
     chain.link_around(logger);
     chain.link_before(rewrite);
+    chain.link_around(cors);
 
     info!("Starting the server on {}:{}", address, port);
     Iron::new(chain).http((&*address, port)).expect("Unable to start server");

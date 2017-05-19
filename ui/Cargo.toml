@@ -19,6 +19,7 @@ serde = "0.9.6"
 serde_derive = "0.9.6"
 serde_json = "0.9.5"
 url = "1.4.0"
+iron-cors2 = { path = "../../../projects/iron-cors2" }
 
 [dependencies.playground-middleware]
 git = "https://github.com/integer32llc/playground-middleware"
