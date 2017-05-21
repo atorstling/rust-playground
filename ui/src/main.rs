@@ -14,7 +14,7 @@ extern crate serde_derive;
 extern crate mktemp;
 #[macro_use]
 extern crate quick_error;
-extern crate iron_cors2;
+extern crate corsware;
 
 use std::any::Any;
 use std::convert::{TryFrom, TryInto};
@@ -27,7 +27,7 @@ use iron::modifiers::Header;
 use iron::prelude::*;
 use iron::status;
 use iron::method::Method::{Get,Post};
-use iron_cors2::{CorsMiddleware, AllowedOrigins, UniCase};
+use corsware::{CorsMiddleware, AllowedOrigins, UniCase};
 
 use mount::Mount;
 use serde::{Serialize, Deserialize};
