@@ -1,4 +1,5 @@
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import PureComponent from './PureComponent';
 import { connect } from 'react-redux';
 import Link from './uss-router/Link';
@@ -49,7 +50,7 @@ class Header extends PureComponent {
 
     const primaryLabel = executionLabel(crateType, tests);
 
-    const mirAvailable = channel === 'nightly';
+    const mirAvailable = channel === 'nightly' || channel === 'beta';
 
     return (
       <div className="header">
