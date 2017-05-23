@@ -26,7 +26,7 @@ use iron::headers::ContentType;
 use iron::modifiers::Header;
 use iron::prelude::*;
 use iron::status;
-use iron::method::Method::{Get,Post};
+use iron::method::Method::{Get, Post};
 use corsware::{CorsMiddleware, AllowedOrigins, UniCase};
 
 use mount::Mount;
@@ -75,14 +75,14 @@ fn main() {
     let file_logger = FileLogger::new(logfile).expect("Unable to create file logger");
     let logger = StatisticLogger::new(file_logger);
     let rewrite = Rewrite::new(vec![vec!["help".into()]], "/index.html".into());
-    let cors = CorsMiddleware { 
-        allowed_origins : AllowedOrigins::Any { allow_null: false }, 
+    let cors = CorsMiddleware {
+        allowed_origins: AllowedOrigins::Any { allow_null: false },
         allowed_headers: vec![UniCase("Content-Type".to_owned())],
-        allowed_methods : vec![ Get, Post ],
+        allowed_methods: vec![Get, Post],
         exposed_headers: vec![],
         allow_credentials: false,
         max_age_seconds: 60 * 60,
-        prefer_wildcard: true
+        prefer_wildcard: true,
     };
 
     chain.link_around(logger);
