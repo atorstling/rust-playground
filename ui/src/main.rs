@@ -44,6 +44,7 @@ const DEFAULT_LOG_FILE: &'static str = "access-log.csv";
 
 mod sandbox;
 
+const ONE_HOUR_IN_SECONDS: u32 = 60 * 60;
 const ONE_DAY_IN_SECONDS: u64 = 60 * 60 * 24;
 const ONE_YEAR_IN_SECONDS: u64 = 60 * 60 * 24 * 365;
 
@@ -80,14 +81,14 @@ fn main() {
     chain.link_around(logger);
     chain.link_before(rewrite);
 
-    if (cors_enabled) {
+    if cors_enabled {
         chain.link_around(CorsMiddleware {
             allowed_origins: AllowedOrigins::Any { allow_null: false },
             allowed_headers: vec![UniCase("Content-Type".to_owned())],
             allowed_methods: vec![Get, Post],
             exposed_headers: vec![],
             allow_credentials: false,
-            max_age_seconds: 60 * 60,
+            max_age_seconds: ONE_HOUR_IN_SECONDS,
             prefer_wildcard: true,
         });
     }
