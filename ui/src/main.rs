@@ -54,6 +54,7 @@ fn main() {
     let address = env::var("PLAYGROUND_UI_ADDRESS").unwrap_or(DEFAULT_ADDRESS.to_string());
     let port = env::var("PLAYGROUND_UI_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(DEFAULT_PORT);
     let logfile = env::var("PLAYGROUND_LOG_FILE").unwrap_or(DEFAULT_LOG_FILE.to_string());
+    let cors_enabled = env::var_os("PLAYGROUND_CORS_ENABLED").is_some();
 
     let files = Staticfile::new(&root).expect("Unable to open root directory");
     let mut files = Chain::new(files);
@@ -75,19 +76,21 @@ fn main() {
     let file_logger = FileLogger::new(logfile).expect("Unable to create file logger");
     let logger = StatisticLogger::new(file_logger);
     let rewrite = Rewrite::new(vec![vec!["help".into()]], "/index.html".into());
-    let cors = CorsMiddleware {
-        allowed_origins: AllowedOrigins::Any { allow_null: false },
-        allowed_headers: vec![UniCase("Content-Type".to_owned())],
-        allowed_methods: vec![Get, Post],
-        exposed_headers: vec![],
-        allow_credentials: false,
-        max_age_seconds: 60 * 60,
-        prefer_wildcard: true,
-    };
 
     chain.link_around(logger);
     chain.link_before(rewrite);
-    chain.link_around(cors);
+
+    if (cors_enabled) {
+        chain.link_around(CorsMiddleware {
+            allowed_origins: AllowedOrigins::Any { allow_null: false },
+            allowed_headers: vec![UniCase("Content-Type".to_owned())],
+            allowed_methods: vec![Get, Post],
+            exposed_headers: vec![],
+            allow_credentials: false,
+            max_age_seconds: 60 * 60,
+            prefer_wildcard: true,
+        });
+    }
 
     info!("Starting the server on {}:{}", address, port);
     Iron::new(chain).http((&*address, port)).expect("Unable to start server");
